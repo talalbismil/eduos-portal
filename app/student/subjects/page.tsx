@@ -93,7 +93,6 @@ export default function StudentSubjectsPage() {
 
   return (
     <div className="w-full space-y-10">
-      {' '}
       {/* Hero */}
       <div className="w-full overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 p-10 text-white shadow-2xl">
         <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-10 items-center">
@@ -109,8 +108,8 @@ export default function StudentSubjectsPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-lg leading-8 text-blue-100">
-              Continue your learning journey, complete assignments, improve your
-              progress, and unlock new achievements.
+              Continue your learning journey, complete assignments, improve
+              your progress, and unlock new achievements.
             </p>
           </div>
 
@@ -136,14 +135,16 @@ export default function StudentSubjectsPage() {
           </div>
         </div>
       </div>
+
       {/* Page Heading */}
       <div className="mt-10 mb-8">
         <h2 className="text-4xl font-bold text-gray-900">My Subjects</h2>
 
         <p className="mt-2 text-lg text-gray-600">
-          Everything you're currently studying.
+          Everything you&apos;re currently studying.
         </p>
       </div>
+
       {subjects.length > 0 ? (
         <div className="space-y-8">
           {subjects.map((subject, index) => {
@@ -193,22 +194,32 @@ export default function StudentSubjectsPage() {
                   <div className="flex-1 p-10">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-3xl font-bold">{subject.name}</h3>
+                        <h3 className="text-3xl font-bold">
+                          {subject.name}
+                        </h3>
 
                         <p className="mt-3 text-lg text-gray-600">
                           {theme.description}
                         </p>
                       </div>
 
-                      <BookOpen size={36} className="text-blue-600 shrink-0" />
+                      <BookOpen
+                        size={36}
+                        className="text-blue-600 shrink-0"
+                      />
                     </div>
 
                     <div className="mt-8 grid md:grid-cols-2 gap-5">
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
-                        <UserRound size={24} className="text-blue-600" />
+                        <UserRound
+                          size={24}
+                          className="text-blue-600"
+                        />
 
                         <div>
-                          <p className="text-sm text-gray-500">Teacher</p>
+                          <p className="text-sm text-gray-500">
+                            Teacher
+                          </p>
 
                           <p className="font-semibold">
                             {subject.teacher || 'Teacher not assigned'}
@@ -217,12 +228,19 @@ export default function StudentSubjectsPage() {
                       </div>
 
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
-                        <Clock size={24} className="text-green-600" />
+                        <Clock
+                          size={24}
+                          className="text-green-600"
+                        />
 
                         <div>
-                          <p className="text-sm text-gray-500">Status</p>
+                          <p className="text-sm text-gray-500">
+                            Status
+                          </p>
 
-                          <p className="font-semibold">Active Learning</p>
+                          <p className="font-semibold">
+                            Active Learning
+                          </p>
                         </div>
                       </div>
                     </div>
@@ -275,14 +293,17 @@ export default function StudentSubjectsPage() {
         </div>
       ) : (
         <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
-          <BookOpen size={56} className="mx-auto mb-6 text-gray-400" />
+          <BookOpen
+            size={56}
+            className="mx-auto mb-6 text-gray-400"
+          />
 
           <h3 className="text-2xl font-bold text-gray-800">
             No Subjects Available
           </h3>
 
           <p className="mt-3 text-gray-500">
-            Your teacher hasn't assigned any subjects yet.
+            Your teacher hasn&apos;t assigned any subjects yet.
           </p>
         </div>
       )}
