@@ -6,6 +6,7 @@ import {
   Save,
   GraduationCap,
   ClipboardCheck,
+  Loader2,
 } from 'lucide-react';
 
 const supabase = createClient(
@@ -16,74 +17,193 @@ const supabase = createClient(
 type Student = {
   id: number;
   name: string;
-  roll_number?: string | number | null;
-  registration_no?: string | null;
-  class?: string | null;
+  roll_number: string | number | null;
+  class: string | null;
 };
 
-type Marks = {
-  [studentId: number]: string;
+type Subject = {
+  id: number;
+  name: string;
+  class: string | null;
+  teacher?: string | null;
 };
 
 export default function TeacherMarksPage() {
+  const [classes, setClasses] = useState<string[]>([]);
+  const [subjects, setSubjects] = useState<Subject[]>([]);
+  const [students, setStudents] = useState<Student[]>([]);
+
   const [className, setClassName] = useState('');
-  const [subject, setSubject] = useState('');
+  const [subjectId, setSubjectId] = useState('');
   const [exam, setExam] = useState('');
   const [totalMarks, setTotalMarks] = useState('');
 
-  const [students, setStudents] = useState<Student[]>([]);
-  const [marks, setMarks] = useState<Marks>({});
+  const [marks, setMarks] = useState<Record<number, string>>({});
 
-  const [loading, setLoading] = useState(false);
+  const [loadingClasses, setLoadingClasses] = useState(true);
+  const [loadingSubjects, setLoadingSubjects] = useState(false);
+  const [loadingStudents, setLoadingStudents] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  async function loadStudents() {
+  /*
+   * ============================================================
+   * LOAD AVAILABLE CLASSES
+   * ============================================================
+   *
+   * Classes are taken directly from the students table.
+   *
+   * Therefore:
+   *
+   * Class 6
+   * Class 7
+   * Class 8
+   * Class 9
+   *
+   * etc. will appear automatically.
+   */
+  useEffect(() => {
+    loadClasses();
+  }, []);
+
+  async function loadClasses() {
+    setLoadingClasses(true);
+
+    const { data, error } = await supabase
+      .from('students')
+      .select('class');
+
+    if (error) {
+      console.error('Error loading classes:', error.message);
+      alert(error.message);
+      setLoadingClasses(false);
+      return;
+    }
+
+    const uniqueClasses = Array.from(
+      new Set(
+        (data || [])
+          .map((student) => student.class)
+          .filter(
+            (value): value is string =>
+              value !== null &&
+              value !== undefined &&
+              value.trim() !== ''
+          )
+      )
+    ).sort((a, b) => {
+      const numberA = Number(a);
+      const numberB = Number(b);
+
+      if (!Number.isNaN(numberA) && !Number.isNaN(numberB)) {
+        return numberA - numberB;
+      }
+
+      return a.localeCompare(b);
+    });
+
+    setClasses(uniqueClasses);
+    setLoadingClasses(false);
+  }
+
+  /*
+   * ============================================================
+   * LOAD SUBJECTS WHEN CLASS CHANGES
+   * ============================================================
+   *
+   * Subjects are taken from the subjects table.
+   *
+   * We only show subjects belonging to the selected class.
+   */
+  useEffect(() => {
     if (!className) {
+      setSubjects([]);
+      setSubjectId('');
       setStudents([]);
       return;
     }
 
-    setLoading(true);
+    loadSubjects(className);
+    loadStudents(className);
+
+    setSubjectId('');
+    setMarks({});
+  }, [className]);
+
+  async function loadSubjects(selectedClass: string) {
+    setLoadingSubjects(true);
+
+    const { data, error } = await supabase
+      .from('subjects')
+      .select('id, name, class, teacher')
+      .eq('class', selectedClass)
+      .order('id');
+
+    if (error) {
+      console.error('Error loading subjects:', error.message);
+      alert(error.message);
+      setSubjects([]);
+      setLoadingSubjects(false);
+      return;
+    }
+
+    setSubjects((data || []) as Subject[]);
+    setLoadingSubjects(false);
+  }
+
+  /*
+   * ============================================================
+   * LOAD STUDENTS WHEN CLASS CHANGES
+   * ============================================================
+   */
+  async function loadStudents(selectedClass: string) {
+    setLoadingStudents(true);
 
     const { data, error } = await supabase
       .from('students')
-      .select(
-        'id, name, roll_number, registration_no, class'
-      )
-      .eq('class', className)
+      .select('id, name, roll_number, class')
+      .eq('class', selectedClass)
       .order('roll_number');
 
     if (error) {
       console.error('Error loading students:', error.message);
       alert(error.message);
       setStudents([]);
-      setLoading(false);
+      setLoadingStudents(false);
       return;
     }
 
-    setStudents(data || []);
-    setLoading(false);
+    setStudents((data || []) as Student[]);
+    setLoadingStudents(false);
   }
 
-  useEffect(() => {
-    loadStudents();
-  }, [className]);
-
-  function updateMark(studentId: number, value: string) {
+  /*
+   * ============================================================
+   * HANDLE MARK CHANGE
+   * ============================================================
+   */
+  function handleMarkChange(
+    studentId: number,
+    value: string
+  ) {
     setMarks((previous) => ({
       ...previous,
       [studentId]: value,
     }));
   }
 
+  /*
+   * ============================================================
+   * SAVE MARKS
+   * ============================================================
+   */
   async function saveMarks() {
     if (!className) {
       alert('Please select a class.');
       return;
     }
 
-    if (!subject.trim()) {
-      alert('Please enter the subject.');
+    if (!subjectId) {
+      alert('Please select a subject.');
       return;
     }
 
@@ -92,79 +212,104 @@ export default function TeacherMarksPage() {
       return;
     }
 
-    if (!totalMarks) {
-      alert('Please enter total marks.');
+    if (!totalMarks || Number(totalMarks) <= 0) {
+      alert('Please enter valid total marks.');
+      return;
+    }
+
+    if (students.length === 0) {
+      alert('No students found in this class.');
+      return;
+    }
+
+    const selectedSubject = subjects.find(
+      (subject) => String(subject.id) === subjectId
+    );
+
+    if (!selectedSubject) {
+      alert('Selected subject could not be found.');
       return;
     }
 
     const total = Number(totalMarks);
 
-    if (total <= 0) {
-      alert('Total marks must be greater than 0.');
-      return;
-    }
-
-    if (students.length === 0) {
-      alert('No students found for this class.');
-      return;
-    }
-
-    const invalidMarks = students.find((student) => {
+    /*
+     * Validate marks before saving.
+     */
+    for (const student of students) {
       const value = marks[student.id];
 
       if (value === undefined || value === '') {
-        return false;
+        alert(
+          `Please enter marks for ${student.name}.`
+        );
+        return;
       }
 
       const obtained = Number(value);
 
-      return obtained < 0 || obtained > total;
-    });
-
-    if (invalidMarks) {
-      alert(
-        `Obtained marks for ${invalidMarks.name} must be between 0 and ${total}.`
-      );
-      return;
+      if (
+        Number.isNaN(obtained) ||
+        obtained < 0 ||
+        obtained > total
+      ) {
+        alert(
+          `Invalid marks for ${student.name}. Marks must be between 0 and ${total}.`
+        );
+        return;
+      }
     }
 
     setSaving(true);
 
+    /*
+     * Create one marks record for every student.
+     */
     const records = students.map((student) => ({
       student_id: student.id,
-      class: className,
-      subject: subject.trim(),
+      subject: selectedSubject.name,
       exam: exam.trim(),
+      obtained_marks: Number(marks[student.id]),
       total_marks: total,
-      obtained_marks: Number(marks[student.id] || 0),
+      class: className,
     }));
 
     const { error } = await supabase
       .from('marks')
       .insert(records);
 
+    setSaving(false);
+
     if (error) {
       console.error('Error saving marks:', error.message);
-      alert(error.message);
-      setSaving(false);
+      alert(`Error saving marks: ${error.message}`);
       return;
     }
 
     alert('Marks saved successfully.');
 
+    /*
+     * Clear the entered marks after successful save.
+     */
     setMarks({});
-    setSaving(false);
+    setExam('');
+    setTotalMarks('');
   }
 
+  /*
+   * ============================================================
+   * PAGE
+   * ============================================================
+   */
   return (
-    <div className="min-h-screen bg-gray-100 p-6 md:p-10">
+    <div className="min-h-screen w-full bg-gray-100 p-6 md:p-10">
 
       {/* Header */}
       <div className="mb-8 flex items-center gap-4">
 
-        <div className="rounded-2xl bg-blue-100 p-3">
-          <GraduationCap
-            size={42}
+        <div className="rounded-2xl bg-blue-100 p-4">
+          <ClipboardCheck
+            size={40}
             className="text-blue-600"
           />
         </div>
@@ -181,73 +326,90 @@ export default function TeacherMarksPage() {
 
       </div>
 
-      {/* Exam Information */}
-      <div className="mb-8 rounded-2xl bg-white p-6 shadow-md md:p-8">
+      {/* Selection Panel */}
+      <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg md:p-8">
 
-        <div className="mb-6 flex items-center gap-3">
+        <h2 className="mb-6 text-xl font-bold text-gray-800">
+          Examination Details
+        </h2>
 
-          <ClipboardCheck
-            size={28}
-            className="text-blue-600"
-          />
-
-          <h2 className="text-2xl font-bold text-gray-800">
-            Examination Information
-          </h2>
-
-        </div>
-
-        <div className="grid gap-5 md:grid-cols-4">
+        <div className="grid gap-5 md:grid-cols-2 lg:grid-cols-4">
 
           {/* Class */}
           <div>
-            <label className="mb-2 block font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Class
             </label>
 
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               value={className}
               onChange={(e) =>
                 setClassName(e.target.value)
               }
+              disabled={loadingClasses}
             >
               <option value="">
-                Select Class
+                {loadingClasses
+                  ? 'Loading classes...'
+                  : 'Select Class'}
               </option>
 
-              <option value="9">
-                Class 9
-              </option>
+              {classes.map((classValue) => (
+                <option
+                  key={classValue}
+                  value={classValue}
+                >
+                  Class {classValue}
+                </option>
+              ))}
             </select>
           </div>
 
           {/* Subject */}
           <div>
-            <label className="mb-2 block font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Subject
             </label>
 
-            <input
-              type="text"
-              className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-              placeholder="e.g. Physics"
-              value={subject}
+            <select
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              value={subjectId}
               onChange={(e) =>
-                setSubject(e.target.value)
+                setSubjectId(e.target.value)
               }
-            />
+              disabled={!className || loadingSubjects}
+            >
+              <option value="">
+                {!className
+                  ? 'Select class first'
+                  : loadingSubjects
+                  ? 'Loading subjects...'
+                  : subjects.length === 0
+                  ? 'No subjects found'
+                  : 'Select Subject'}
+              </option>
+
+              {subjects.map((subject) => (
+                <option
+                  key={subject.id}
+                  value={subject.id}
+                >
+                  {subject.name}
+                </option>
+              ))}
+            </select>
           </div>
 
           {/* Exam */}
           <div>
-            <label className="mb-2 block font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Exam
             </label>
 
             <input
               type="text"
-              className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="e.g. Mid Term"
               value={exam}
               onChange={(e) =>
@@ -258,14 +420,14 @@ export default function TeacherMarksPage() {
 
           {/* Total Marks */}
           <div>
-            <label className="mb-2 block font-medium text-gray-700">
+            <label className="mb-2 block text-sm font-semibold text-gray-700">
               Total Marks
             </label>
 
             <input
               type="number"
               min="1"
-              className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               placeholder="e.g. 50"
               value={totalMarks}
               onChange={(e) =>
@@ -275,177 +437,227 @@ export default function TeacherMarksPage() {
           </div>
 
         </div>
-
       </div>
 
       {/* Students */}
-      <div className="rounded-2xl bg-white p-6 shadow-md md:p-8">
+      <div className="rounded-2xl bg-white p-6 shadow-lg md:p-8">
 
-        <div className="mb-6">
+        <div className="mb-6 flex items-center justify-between">
 
-          <h2 className="text-2xl font-bold text-gray-800">
-            Student Marks
-          </h2>
+          <div>
+            <h2 className="text-xl font-bold text-gray-800">
+              Students
+            </h2>
 
-          <p className="mt-1 text-gray-500">
-            Select a class above to load its students.
-          </p>
+            {className && (
+              <p className="mt-1 text-sm text-gray-500">
+                Class {className} — {students.length}{' '}
+                student
+                {students.length !== 1 ? 's' : ''}
+              </p>
+            )}
+          </div>
+
+          {subjectId && (
+            <div className="hidden rounded-lg bg-blue-50 px-4 py-2 text-sm font-semibold text-blue-700 md:block">
+              {
+                subjects.find(
+                  (subject) =>
+                    String(subject.id) === subjectId
+                )?.name
+              }
+            </div>
+          )}
 
         </div>
 
         {/* Loading */}
-        {loading && (
-          <div className="rounded-xl bg-gray-50 p-10 text-center">
-            <p className="text-lg font-medium text-gray-600">
+        {loadingStudents && (
+          <div className="flex items-center justify-center py-16">
+
+            <Loader2
+              size={32}
+              className="animate-spin text-blue-600"
+            />
+
+            <span className="ml-3 text-gray-600">
               Loading students...
-            </p>
+            </span>
+
           </div>
         )}
 
         {/* No class */}
-        {!loading && !className && (
-          <div className="rounded-xl bg-gray-50 p-10 text-center">
+        {!loadingStudents && !className && (
+          <div className="rounded-2xl bg-gray-50 p-12 text-center">
 
             <GraduationCap
               size={52}
               className="mx-auto text-gray-400"
             />
 
-            <h3 className="mt-4 text-xl font-bold text-gray-700">
-              Select a Class
+            <h3 className="mt-5 text-xl font-bold text-gray-700">
+              Select a class
             </h3>
 
             <p className="mt-2 text-gray-500">
-              Choose a class to display its students.
+              Choose a class above to load its students.
             </p>
 
           </div>
         )}
 
         {/* No students */}
-        {!loading &&
+        {!loadingStudents &&
           className &&
           students.length === 0 && (
-            <div className="rounded-xl bg-gray-50 p-10 text-center">
+            <div className="rounded-2xl bg-gray-50 p-12 text-center">
 
               <GraduationCap
                 size={52}
                 className="mx-auto text-gray-400"
               />
 
-              <h3 className="mt-4 text-xl font-bold text-gray-700">
-                No Students Found
+              <h3 className="mt-5 text-xl font-bold text-gray-700">
+                No students found
               </h3>
 
               <p className="mt-2 text-gray-500">
-                There are no students registered in this class.
+                There are currently no students registered
+                in Class {className}.
               </p>
 
             </div>
           )}
 
-        {/* Student table */}
-        {!loading && students.length > 0 && (
-          <div className="overflow-x-auto">
+        {/* Students Table */}
+        {!loadingStudents &&
+          students.length > 0 && (
+            <>
+              <div className="overflow-x-auto">
 
-            <table className="w-full border-collapse">
+                <table className="w-full border-collapse">
 
-              <thead>
-                <tr className="bg-gray-100">
+                  <thead>
+                    <tr className="bg-gray-100">
 
-                  <th className="border p-3 text-left">
-                    Roll No
-                  </th>
+                      <th className="border p-4 text-left">
+                        #
+                      </th>
 
-                  <th className="border p-3 text-left">
-                    Student Name
-                  </th>
+                      <th className="border p-4 text-left">
+                        Roll No
+                      </th>
 
-                  <th className="border p-3 text-left">
-                    Registration No
-                  </th>
+                      <th className="border p-4 text-left">
+                        Student Name
+                      </th>
 
-                  <th className="border p-3 text-left">
-                    Obtained Marks
-                  </th>
+                      <th className="border p-4 text-left">
+                        Obtained Marks
+                      </th>
 
-                </tr>
-              </thead>
+                    </tr>
+                  </thead>
 
-              <tbody>
+                  <tbody>
 
-                {students.map((student) => (
+                    {students.map(
+                      (student, index) => (
+                        <tr
+                          key={student.id}
+                          className="transition hover:bg-blue-50"
+                        >
 
-                  <tr
-                    key={student.id}
-                    className="hover:bg-gray-50"
-                  >
+                          <td className="border p-4 text-gray-500">
+                            {index + 1}
+                          </td>
 
-                    <td className="border p-3">
-                      {student.roll_number ?? '-'}
-                    </td>
+                          <td className="border p-4 font-medium">
+                            {student.roll_number ||
+                              '—'}
+                          </td>
 
-                    <td className="border p-3 font-medium">
-                      {student.name}
-                    </td>
+                          <td className="border p-4 font-semibold text-gray-800">
+                            {student.name}
+                          </td>
 
-                    <td className="border p-3 text-gray-600">
-                      {student.registration_no ?? '-'}
-                    </td>
+                          <td className="border p-4">
 
-                    <td className="border p-3">
+                            <input
+                              type="number"
+                              min="0"
+                              max={
+                                totalMarks
+                                  ? Number(
+                                      totalMarks
+                                    )
+                                  : undefined
+                              }
+                              className="w-36 rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                              placeholder={
+                                totalMarks
+                                  ? `0-${totalMarks}`
+                                  : 'Marks'
+                              }
+                              value={
+                                marks[
+                                  student.id
+                                ] || ''
+                              }
+                              onChange={(e) =>
+                                handleMarkChange(
+                                  student.id,
+                                  e.target.value
+                                )
+                              }
+                            />
 
-                      <input
-                        type="number"
-                        min="0"
-                        max={
-                          totalMarks
-                            ? Number(totalMarks)
-                            : undefined
-                        }
-                        className="w-32 rounded-lg border border-gray-300 p-2 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-                        placeholder="Marks"
-                        value={
-                          marks[student.id] ?? ''
-                        }
-                        onChange={(e) =>
-                          updateMark(
-                            student.id,
-                            e.target.value
-                          )
-                        }
+                          </td>
+
+                        </tr>
+                      )
+                    )}
+
+                  </tbody>
+
+                </table>
+
+              </div>
+
+              {/* Save */}
+              <div className="mt-8 flex justify-end">
+
+                <button
+                  onClick={saveMarks}
+                  disabled={saving}
+                  className="inline-flex items-center gap-2 rounded-xl bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-60"
+                >
+
+                  {saving ? (
+                    <>
+                      <Loader2
+                        size={20}
+                        className="animate-spin"
                       />
 
-                    </td>
+                      Saving...
+                    </>
+                  ) : (
+                    <>
+                      <Save size={20} />
 
-                  </tr>
+                      Save Marks
+                    </>
+                  )}
 
-                ))}
+                </button>
 
-              </tbody>
-
-            </table>
-
-            {/* Save */}
-            <button
-              onClick={saveMarks}
-              disabled={saving}
-              className="mt-8 inline-flex items-center gap-2 rounded-lg bg-blue-600 px-8 py-3 font-semibold text-white transition hover:bg-blue-700 disabled:cursor-not-allowed disabled:opacity-50"
-            >
-
-              <Save size={20} />
-
-              {saving
-                ? 'Saving Marks...'
-                : 'Save Marks'}
-
-            </button>
-
-          </div>
-        )}
+              </div>
+            </>
+          )}
 
       </div>
-
     </div>
   );
 }
