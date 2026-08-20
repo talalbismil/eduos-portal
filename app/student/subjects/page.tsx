@@ -67,9 +67,7 @@ export default function StudentSubjectsPage() {
 
   async function loadSubjects() {
     try {
-      /*
-       * 1. Get the currently logged-in Auth user
-       */
+      // Get currently logged-in Supabase user
       const {
         data: { user },
         error: authError,
@@ -82,15 +80,8 @@ export default function StudentSubjectsPage() {
         return;
       }
 
-      /*
-       * 2. Convert the internal Auth email:
-       *
-       * edu-os-004@eduos.local
-       *
-       * into:
-       *
-       * EDU-OS-004
-       */
+      // Convert Auth email into registration number
+      // edu-os-004@eduos.local -> EDU-OS-004
       if (!user.email) {
         console.error('Logged-in user has no email');
         setSubjects([]);
@@ -102,12 +93,7 @@ export default function StudentSubjectsPage() {
         .split('@')[0]
         .toUpperCase();
 
-      /*
-       * 3. Find this student's record.
-       *
-       * Hifza:
-       * EDU-OS-004 → student ID 21
-       */
+      // Find this student's record
       const {
         data: student,
         error: studentError,
@@ -128,13 +114,7 @@ export default function StudentSubjectsPage() {
         return;
       }
 
-      /*
-       * 4. Get ONLY the subject IDs assigned
-       *    to this student.
-       *
-       * We deliberately query student_subjects separately.
-       * This avoids depending on a Supabase relationship.
-       */
+      // Get ONLY subjects assigned to this student
       const {
         data: assignments,
         error: assignmentError,
@@ -160,12 +140,12 @@ export default function StudentSubjectsPage() {
         return;
       }
 
-      /*
-       * 5. Extract the assigned subject IDs.
-       */
+      // Extract assigned subject IDs
       const subjectIds = assignments
         .map((assignment) => assignment.subject_id)
-        .filter((id) => id !== null && id !== undefined);
+        .filter(
+          (id) => id !== null && id !== undefined
+        );
 
       if (subjectIds.length === 0) {
         setSubjects([]);
@@ -173,9 +153,7 @@ export default function StudentSubjectsPage() {
         return;
       }
 
-      /*
-       * 6. Fetch ONLY those subjects.
-       */
+      // Fetch ONLY those subjects
       const {
         data: subjectData,
         error: subjectError,
@@ -196,9 +174,7 @@ export default function StudentSubjectsPage() {
         return;
       }
 
-      /*
-       * 7. Display only the student's assigned subjects.
-       */
+      // Display only assigned subjects
       setSubjects((subjectData as Subject[]) || []);
       setLoading(false);
     } catch (error) {
@@ -228,17 +204,21 @@ export default function StudentSubjectsPage() {
       {/* Hero */}
       <div className="w-full overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 p-10 text-white shadow-2xl">
 
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-10 items-center">
+        <div className="grid grid-cols-1 items-center gap-10 xl:grid-cols-[1fr_340px]">
 
           <div>
+
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
+
               <GraduationCap size={18} />
+
               <span className="font-medium">
                 EduOS Student Portal
               </span>
+
             </div>
 
-            <h1 className="mt-6 text-4xl lg:text-5xl font-extrabold">
+            <h1 className="mt-6 text-4xl font-extrabold lg:text-5xl">
               Welcome Back 👋
             </h1>
 
@@ -246,41 +226,79 @@ export default function StudentSubjectsPage() {
               Continue your learning journey, complete assignments,
               improve your progress, and unlock new achievements.
             </p>
+
           </div>
 
           <div className="grid grid-cols-3 gap-4">
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Flame size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">5</p>
-              <p className="text-sm text-blue-100">Day Streak</p>
+
+              <Flame
+                size={28}
+                className="mx-auto"
+              />
+
+              <p className="mt-3 text-3xl font-bold">
+                5
+              </p>
+
+              <p className="text-sm text-blue-100">
+                Day Streak
+              </p>
+
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Star size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">240</p>
-              <p className="text-sm text-blue-100">XP</p>
+
+              <Star
+                size={28}
+                className="mx-auto"
+              />
+
+              <p className="mt-3 text-3xl font-bold">
+                240
+              </p>
+
+              <p className="text-sm text-blue-100">
+                XP
+              </p>
+
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Trophy size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">3</p>
-              <p className="text-sm text-blue-100">Level</p>
+
+              <Trophy
+                size={28}
+                className="mx-auto"
+              />
+
+              <p className="mt-3 text-3xl font-bold">
+                3
+              </p>
+
+              <p className="text-sm text-blue-100">
+                Level
+              </p>
+
             </div>
 
           </div>
+
         </div>
+
       </div>
 
       {/* Heading */}
-      <div className="mt-10 mb-8">
+      <div className="mb-8 mt-10">
+
         <h2 className="text-4xl font-bold text-gray-900">
           My Subjects
         </h2>
 
         <p className="mt-2 text-lg text-gray-600">
-          Everything you're currently studying.
+          Everything you&apos;re currently studying.
         </p>
+
       </div>
 
       {/* Subjects */}
@@ -294,6 +312,7 @@ export default function StudentSubjectsPage() {
               subjectThemes[index % subjectThemes.length];
 
             return (
+
               <div
                 key={subject.id}
                 className="
@@ -301,9 +320,9 @@ export default function StudentSubjectsPage() {
                   rounded-3xl
                   bg-white
                   shadow-xl
-                  hover:shadow-2xl
                   transition
                   hover:-translate-y-1
+                  hover:shadow-2xl
                 "
               >
 
@@ -312,16 +331,16 @@ export default function StudentSubjectsPage() {
                   {/* Visual */}
                   <div
                     className={`
-                      xl:w-80
-                      w-full
-                      h-64
-                      xl:h-auto
-                      bg-gradient-to-br
-                      ${theme.color}
                       flex
+                      h-64
+                      w-full
                       items-center
                       justify-center
+                      bg-gradient-to-br
+                      ${theme.color}
                       p-10
+                      xl:h-auto
+                      xl:w-80
                     `}
                   >
 
@@ -358,12 +377,13 @@ export default function StudentSubjectsPage() {
 
                       <BookOpen
                         size={36}
-                        className="text-blue-600 shrink-0"
+                        className="shrink-0 text-blue-600"
                       />
 
                     </div>
 
-                    <div className="mt-8 grid md:grid-cols-2 gap-5">
+                    {/* Teacher and status */}
+                    <div className="mt-8 grid gap-5 md:grid-cols-2">
 
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
 
@@ -410,9 +430,10 @@ export default function StudentSubjectsPage() {
 
                     </div>
 
+                    {/* Progress */}
                     <div className="mt-8">
 
-                      <div className="flex justify-between mb-2">
+                      <div className="mb-2 flex justify-between">
 
                         <span className="font-medium text-gray-700">
                           Learning Progress
@@ -424,7 +445,7 @@ export default function StudentSubjectsPage() {
 
                       </div>
 
-                      <div className="h-3 rounded-full overflow-hidden bg-gray-200">
+                      <div className="h-3 overflow-hidden rounded-full bg-gray-200">
 
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
@@ -437,6 +458,7 @@ export default function StudentSubjectsPage() {
 
                     </div>
 
+                    {/* Continue */}
                     <button
                       className="
                         mt-8
@@ -447,14 +469,16 @@ export default function StudentSubjectsPage() {
                         bg-blue-600
                         px-8
                         py-3
-                        text-white
                         font-semibold
-                        hover:bg-blue-700
+                        text-white
                         transition
+                        hover:bg-blue-700
                       "
                     >
                       Continue Learning
+
                       <ArrowRight size={18} />
+
                     </button>
 
                   </div>
@@ -462,6 +486,7 @@ export default function StudentSubjectsPage() {
                 </div>
 
               </div>
+
             );
           })}
 
@@ -481,7 +506,7 @@ export default function StudentSubjectsPage() {
           </h3>
 
           <p className="mt-3 text-gray-500">
-            Your teacher hasn't assigned any subjects yet.
+            Your teacher hasn&apos;t assigned any subjects yet.
           </p>
 
         </div>
