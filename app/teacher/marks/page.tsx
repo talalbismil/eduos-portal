@@ -1,13 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { createClient } from '@supabase/supabase-js';
 import {
   Save,
   GraduationCap,
   ClipboardCheck,
   Loader2,
 } from 'lucide-react';
+import { createClient } from '@supabase/supabase-js';
 
 const supabase = createClient(
   process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -45,22 +45,6 @@ export default function TeacherMarksPage() {
   const [loadingStudents, setLoadingStudents] = useState(false);
   const [saving, setSaving] = useState(false);
 
-  /*
-   * ============================================================
-   * LOAD AVAILABLE CLASSES
-   * ============================================================
-   *
-   * Classes are taken directly from the students table.
-   *
-   * Therefore:
-   *
-   * Class 6
-   * Class 7
-   * Class 8
-   * Class 9
-   *
-   * etc. will appear automatically.
-   */
   useEffect(() => {
     loadClasses();
   }, []);
@@ -73,7 +57,7 @@ export default function TeacherMarksPage() {
       .select('class');
 
     if (error) {
-      console.error('Error loading classes:', error.message);
+      console.error(error.message);
       alert(error.message);
       setLoadingClasses(false);
       return;
@@ -82,13 +66,8 @@ export default function TeacherMarksPage() {
     const uniqueClasses = Array.from(
       new Set(
         (data || [])
-          .map((student) => student.class)
-          .filter(
-            (value): value is string =>
-              value !== null &&
-              value !== undefined &&
-              value.trim() !== ''
-          )
+          .map((student) => student.class?.trim())
+          .filter(Boolean)
       )
     ).sort((a, b) => {
       const numberA = Number(a);
@@ -105,37 +84,32 @@ export default function TeacherMarksPage() {
     setLoadingClasses(false);
   }
 
-  /*
-   * ============================================================
-   * LOAD SUBJECTS WHEN CLASS CHANGES
-   * ============================================================
-   *
-   * Subjects are taken from the subjects table.
-   *
-   * We only show subjects belonging to the selected class.
-   */
   useEffect(() => {
     if (!className) {
       setSubjects([]);
-      setSubjectId('');
       setStudents([]);
+      setSubjectId('');
+      setMarks({});
       return;
     }
 
-    loadSubjects(className);
-    loadStudents(className);
-
     setSubjectId('');
     setMarks({});
+
+    loadSubjects(className);
+    loadStudents(className);
   }, [className]);
 
   async function loadSubjects(selectedClass: string) {
     setLoadingSubjects(true);
 
+    /*
+     * Load subjects directly from the subjects table.
+     * We deliberately do not hard-code subjects.
+     */
     const { data, error } = await supabase
       .from('subjects')
       .select('id, name, class, teacher')
-      .eq('class', selectedClass)
       .order('id');
 
     if (error) {
@@ -146,15 +120,27 @@ export default function TeacherMarksPage() {
       return;
     }
 
-    setSubjects((data || []) as Subject[]);
+    /*
+     * Match the class after trimming whitespace.
+     *
+     * Example:
+     * "6" === "6"
+     * " 6 " === "6"
+     */
+    const filteredSubjects = ((data || []) as Subject[]).filter(
+      (subject) =>
+        subject.class?.trim() === selectedClass.trim()
+    );
+
+    setSubjects(filteredSubjects);
     setLoadingSubjects(false);
+
+    console.log(
+      `Subjects for Class ${selectedClass}:`,
+      filteredSubjects
+    );
   }
 
-  /*
-   * ============================================================
-   * LOAD STUDENTS WHEN CLASS CHANGES
-   * ============================================================
-   */
   async function loadStudents(selectedClass: string) {
     setLoadingStudents(true);
 
@@ -176,11 +162,6 @@ export default function TeacherMarksPage() {
     setLoadingStudents(false);
   }
 
-  /*
-   * ============================================================
-   * HANDLE MARK CHANGE
-   * ============================================================
-   */
   function handleMarkChange(
     studentId: number,
     value: string
@@ -191,11 +172,6 @@ export default function TeacherMarksPage() {
     }));
   }
 
-  /*
-   * ============================================================
-   * SAVE MARKS
-   * ============================================================
-   */
   async function saveMarks() {
     if (!className) {
       alert('Please select a class.');
@@ -233,16 +209,11 @@ export default function TeacherMarksPage() {
 
     const total = Number(totalMarks);
 
-    /*
-     * Validate marks before saving.
-     */
     for (const student of students) {
       const value = marks[student.id];
 
       if (value === undefined || value === '') {
-        alert(
-          `Please enter marks for ${student.name}.`
-        );
+        alert(`Please enter marks for ${student.name}.`);
         return;
       }
 
@@ -262,9 +233,6 @@ export default function TeacherMarksPage() {
 
     setSaving(true);
 
-    /*
-     * Create one marks record for every student.
-     */
     const records = students.map((student) => ({
       student_id: student.id,
       subject: selectedSubject.name,
@@ -288,19 +256,11 @@ export default function TeacherMarksPage() {
 
     alert('Marks saved successfully.');
 
-    /*
-     * Clear the entered marks after successful save.
-     */
     setMarks({});
     setExam('');
     setTotalMarks('');
   }
 
-  /*
-   * ============================================================
-   * PAGE
-   * ============================================================
-   */
   return (
     <div className="min-h-screen w-full bg-gray-100 p-6 md:p-10">
 
@@ -320,13 +280,13 @@ export default function TeacherMarksPage() {
           </h1>
 
           <p className="mt-1 text-gray-600">
-            Enter and save examination marks for your students.
+            Enter and save marks for your students.
           </p>
         </div>
 
       </div>
 
-      {/* Selection Panel */}
+      {/* Examination Details */}
       <div className="mb-8 rounded-2xl bg-white p-6 shadow-lg md:p-8">
 
         <h2 className="mb-6 text-xl font-bold text-gray-800">
@@ -342,7 +302,7 @@ export default function TeacherMarksPage() {
             </label>
 
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               value={className}
               onChange={(e) =>
                 setClassName(e.target.value)
@@ -373,7 +333,7 @@ export default function TeacherMarksPage() {
             </label>
 
             <select
-              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              className="w-full rounded-lg border border-gray-300 bg-white p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
               value={subjectId}
               onChange={(e) =>
                 setSubjectId(e.target.value)
@@ -393,24 +353,33 @@ export default function TeacherMarksPage() {
               {subjects.map((subject) => (
                 <option
                   key={subject.id}
-                  value={subject.id}
+                  value={String(subject.id)}
                 >
                   {subject.name}
                 </option>
               ))}
             </select>
+
+            {/* Helpful diagnostic */}
+            {className &&
+              !loadingSubjects &&
+              subjects.length === 0 && (
+                <p className="mt-2 text-sm text-red-600">
+                  No subjects found for Class {className}.
+                </p>
+              )}
           </div>
 
           {/* Exam */}
           <div>
             <label className="mb-2 block text-sm font-semibold text-gray-700">
-              Exam
+              Exam / Activity
             </label>
 
             <input
               type="text"
-              className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-              placeholder="e.g. Mid Term"
+              className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              placeholder="e.g. Daily Activity"
               value={exam}
               onChange={(e) =>
                 setExam(e.target.value)
@@ -427,8 +396,8 @@ export default function TeacherMarksPage() {
             <input
               type="number"
               min="1"
-              className="w-full rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
-              placeholder="e.g. 50"
+              className="w-full rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+              placeholder="e.g. 10"
               value={totalMarks}
               onChange={(e) =>
                 setTotalMarks(e.target.value)
@@ -574,8 +543,7 @@ export default function TeacherMarksPage() {
                           </td>
 
                           <td className="border p-4 font-medium">
-                            {student.roll_number ||
-                              '—'}
+                            {student.roll_number || '—'}
                           </td>
 
                           <td className="border p-4 font-semibold text-gray-800">
@@ -589,21 +557,17 @@ export default function TeacherMarksPage() {
                               min="0"
                               max={
                                 totalMarks
-                                  ? Number(
-                                      totalMarks
-                                    )
+                                  ? Number(totalMarks)
                                   : undefined
                               }
-                              className="w-36 rounded-lg border border-gray-300 p-3 outline-none transition focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
+                              className="w-36 rounded-lg border border-gray-300 p-3 outline-none focus:border-blue-500 focus:ring-2 focus:ring-blue-200"
                               placeholder={
                                 totalMarks
                                   ? `0-${totalMarks}`
                                   : 'Marks'
                               }
                               value={
-                                marks[
-                                  student.id
-                                ] || ''
+                                marks[student.id] || ''
                               }
                               onChange={(e) =>
                                 handleMarkChange(
@@ -640,13 +604,11 @@ export default function TeacherMarksPage() {
                         size={20}
                         className="animate-spin"
                       />
-
                       Saving...
                     </>
                   ) : (
                     <>
                       <Save size={20} />
-
                       Save Marks
                     </>
                   )}
@@ -661,3 +623,4 @@ export default function TeacherMarksPage() {
     </div>
   );
 }
+```
