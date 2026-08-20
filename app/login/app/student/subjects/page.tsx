@@ -93,24 +93,26 @@ export default function StudentSubjectsPage() {
 
   return (
     <div className="w-full space-y-10">
-      {' '}
       {/* Hero */}
       <div className="w-full overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 p-10 text-white shadow-2xl">
-        <div className="grid grid-cols-1 xl:grid-cols-[1fr_340px] gap-10 items-center">
+        <div className="grid grid-cols-1 items-center gap-10 xl:grid-cols-[1fr_340px]">
           {/* Left */}
           <div>
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
               <GraduationCap size={18} />
-              <span className="font-medium">EduOS Student Portal</span>
+
+              <span className="font-medium">
+                EduOS Student Portal
+              </span>
             </div>
 
-            <h1 className="mt-6 text-4xl lg:text-5xl font-extrabold">
+            <h1 className="mt-6 text-4xl font-extrabold lg:text-5xl">
               Welcome Back 👋
             </h1>
 
             <p className="mt-4 max-w-2xl text-lg leading-8 text-blue-100">
-              Continue your learning journey, complete assignments, improve your
-              progress, and unlock new achievements.
+              Continue your learning journey, complete assignments, improve
+              your progress, and unlock new achievements.
             </p>
           </div>
 
@@ -118,36 +120,59 @@ export default function StudentSubjectsPage() {
           <div className="grid grid-cols-3 gap-4">
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
               <Flame size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">5</p>
-              <p className="text-sm text-blue-100">Day Streak</p>
+
+              <p className="mt-3 text-3xl font-bold">
+                5
+              </p>
+
+              <p className="text-sm text-blue-100">
+                Day Streak
+              </p>
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
               <Star size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">240</p>
-              <p className="text-sm text-blue-100">XP</p>
+
+              <p className="mt-3 text-3xl font-bold">
+                240
+              </p>
+
+              <p className="text-sm text-blue-100">
+                XP
+              </p>
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
               <Trophy size={28} className="mx-auto" />
-              <p className="mt-3 text-3xl font-bold">3</p>
-              <p className="text-sm text-blue-100">Level</p>
+
+              <p className="mt-3 text-3xl font-bold">
+                3
+              </p>
+
+              <p className="text-sm text-blue-100">
+                Level
+              </p>
             </div>
           </div>
         </div>
       </div>
+
       {/* Page Heading */}
-      <div className="mt-10 mb-8">
-        <h2 className="text-4xl font-bold text-gray-900">My Subjects</h2>
+      <div className="mb-8 mt-10">
+        <h2 className="text-4xl font-bold text-gray-900">
+          My Subjects
+        </h2>
 
         <p className="mt-2 text-lg text-gray-600">
-          Everything you're currently studying.
+          Everything you&apos;re currently studying.
         </p>
       </div>
+
       {subjects.length > 0 ? (
         <div className="space-y-8">
           {subjects.map((subject, index) => {
-            const theme = subjectThemes[index % subjectThemes.length];
+            const theme =
+              subjectThemes[index % subjectThemes.length];
 
             return (
               <div
@@ -157,30 +182,31 @@ export default function StudentSubjectsPage() {
                   rounded-3xl
                   bg-white
                   shadow-xl
-                  hover:shadow-2xl
                   transition
                   hover:-translate-y-1
+                  hover:shadow-2xl
                 "
               >
                 <div className="flex flex-col xl:flex-row">
                   {/* Left Visual */}
-
                   <div
                     className={`
-                      xl:w-80
-                      w-full
-                      h-64
-                      xl:h-auto
-                      bg-gradient-to-br
-                      ${theme.color}
                       flex
+                      h-64
+                      w-full
                       items-center
                       justify-center
+                      bg-gradient-to-br
+                      ${theme.color}
                       p-10
+                      xl:h-auto
+                      xl:w-80
                     `}
                   >
                     <div className="text-center text-white">
-                      <div className="text-8xl">{theme.icon}</div>
+                      <div className="text-8xl">
+                        {theme.icon}
+                      </div>
 
                       <h3 className="mt-6 text-3xl font-bold">
                         {subject.name}
@@ -189,46 +215,63 @@ export default function StudentSubjectsPage() {
                   </div>
 
                   {/* Right Content */}
-
                   <div className="flex-1 p-10">
                     <div className="flex items-start justify-between">
                       <div>
-                        <h3 className="text-3xl font-bold">{subject.name}</h3>
+                        <h3 className="text-3xl font-bold">
+                          {subject.name}
+                        </h3>
 
                         <p className="mt-3 text-lg text-gray-600">
                           {theme.description}
                         </p>
                       </div>
 
-                      <BookOpen size={36} className="text-blue-600 shrink-0" />
+                      <BookOpen
+                        size={36}
+                        className="shrink-0 text-blue-600"
+                      />
                     </div>
 
-                    <div className="mt-8 grid md:grid-cols-2 gap-5">
+                    <div className="mt-8 grid gap-5 md:grid-cols-2">
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
-                        <UserRound size={24} className="text-blue-600" />
+                        <UserRound
+                          size={24}
+                          className="text-blue-600"
+                        />
 
                         <div>
-                          <p className="text-sm text-gray-500">Teacher</p>
+                          <p className="text-sm text-gray-500">
+                            Teacher
+                          </p>
 
                           <p className="font-semibold">
-                            {subject.teacher || 'Teacher not assigned'}
+                            {subject.teacher ||
+                              'Teacher not assigned'}
                           </p>
                         </div>
                       </div>
 
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
-                        <Clock size={24} className="text-green-600" />
+                        <Clock
+                          size={24}
+                          className="text-green-600"
+                        />
 
                         <div>
-                          <p className="text-sm text-gray-500">Status</p>
+                          <p className="text-sm text-gray-500">
+                            Status
+                          </p>
 
-                          <p className="font-semibold">Active Learning</p>
+                          <p className="font-semibold">
+                            Active Learning
+                          </p>
                         </div>
                       </div>
                     </div>
 
                     <div className="mt-8">
-                      <div className="flex justify-between mb-2">
+                      <div className="mb-2 flex justify-between">
                         <span className="font-medium text-gray-700">
                           Learning Progress
                         </span>
@@ -238,7 +281,7 @@ export default function StudentSubjectsPage() {
                         </span>
                       </div>
 
-                      <div className="h-3 rounded-full overflow-hidden bg-gray-200">
+                      <div className="h-3 overflow-hidden rounded-full bg-gray-200">
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
                           style={{
@@ -258,13 +301,14 @@ export default function StudentSubjectsPage() {
                         bg-blue-600
                         px-8
                         py-3
-                        text-white
                         font-semibold
-                        hover:bg-blue-700
+                        text-white
                         transition
+                        hover:bg-blue-700
                       "
                     >
                       Continue Learning
+
                       <ArrowRight size={18} />
                     </button>
                   </div>
@@ -275,14 +319,17 @@ export default function StudentSubjectsPage() {
         </div>
       ) : (
         <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
-          <BookOpen size={56} className="mx-auto mb-6 text-gray-400" />
+          <BookOpen
+            size={56}
+            className="mx-auto mb-6 text-gray-400"
+          />
 
           <h3 className="text-2xl font-bold text-gray-800">
             No Subjects Available
           </h3>
 
           <p className="mt-3 text-gray-500">
-            Your teacher hasn't assigned any subjects yet.
+            Your teacher hasn&apos;t assigned any subjects yet.
           </p>
         </div>
       )}
