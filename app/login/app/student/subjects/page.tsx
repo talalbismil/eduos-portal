@@ -66,21 +66,158 @@ export default function StudentSubjectsPage() {
   }, []);
 
   async function loadSubjects() {
-    const { data, error } = await supabase
-      .from('subjects')
-      .select('*')
-      .order('id');
+    try {
+      /*
+       * 1. Get the currently logged-in Supabase user.
+       */
+      const {
+        data: { user },
+        error: authError,
+      } = await supabase.auth.getUser();
 
-    if (error) {
-      console.error(error.message);
+      if (authError || !user) {
+        console.error('Auth error:', authError?.message);
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      /*
+       * 2. The Auth email is internally stored like:
+       *
+       * edu-os-004@eduos.local
+       *
+       * Convert it to:
+       *
+       * EDU-OS-004
+       *
+       * which is the student's registration number.
+       */
+      if (!user.email) {
+        console.error('Logged-in user has no email');
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      const registrationNo = user.email
+        .split('@')[0]
+        .toUpperCase();
+
+      /*
+       * 3. Find the student record.
+       *
+       * Example:
+       *
+       * EDU-OS-004 → Hifza → student ID 21
+       */
+      const {
+        data: student,
+        error: studentError,
+      } = await supabase
+        .from('students')
+        .select('id')
+        .eq('registration_no', registrationNo)
+        .single();
+
+      if (studentError || !student) {
+        console.error(
+          'Student not found:',
+          studentError?.message
+        );
+
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      /*
+       * 4. Get ONLY the subjects assigned to this student.
+       *
+       * We do NOT fetch all subjects.
+       */
+      const {
+        data: assignments,
+        error: assignmentError,
+      } = await supabase
+        .from('student_subjects')
+        .select('subject_id')
+        .eq('student_id', student.id);
+
+      if (assignmentError) {
+        console.error(
+          'Error loading assignments:',
+          assignmentError.message
+        );
+
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      if (!assignments || assignments.length === 0) {
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      /*
+       * 5. Extract subject IDs.
+       */
+      const subjectIds = assignments
+        .map((assignment) => assignment.subject_id)
+        .filter(
+          (id) => id !== null && id !== undefined
+        );
+
+      if (subjectIds.length === 0) {
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      /*
+       * 6. Fetch ONLY those subjects.
+       */
+      const {
+        data: subjectData,
+        error: subjectError,
+      } = await supabase
+        .from('subjects')
+        .select('id, name, teacher')
+        .in('id', subjectIds)
+        .order('id');
+
+      if (subjectError) {
+        console.error(
+          'Error loading subjects:',
+          subjectError.message
+        );
+
+        setSubjects([]);
+        setLoading(false);
+        return;
+      }
+
+      /*
+       * 7. Display only assigned subjects.
+       */
+      setSubjects((subjectData as Subject[]) || []);
       setLoading(false);
-      return;
-    }
+    } catch (error) {
+      console.error(
+        'Unexpected error loading subjects:',
+        error
+      );
 
-    setSubjects((data as Subject[]) || []);
-    setLoading(false);
+      setSubjects([]);
+      setLoading(false);
+    }
   }
 
+  /*
+   * Loading screen
+   */
   if (loading) {
     return (
       <div className="flex h-[70vh] items-center justify-center">
@@ -93,17 +230,23 @@ export default function StudentSubjectsPage() {
 
   return (
     <div className="w-full space-y-10">
+
       {/* Hero */}
       <div className="w-full overflow-hidden rounded-3xl bg-gradient-to-r from-blue-700 via-indigo-700 to-cyan-600 p-10 text-white shadow-2xl">
+
         <div className="grid grid-cols-1 items-center gap-10 xl:grid-cols-[1fr_340px]">
-          {/* Left */}
+
+          {/* Hero left */}
           <div>
+
             <div className="inline-flex items-center gap-2 rounded-full bg-white/20 px-4 py-2 backdrop-blur">
+
               <GraduationCap size={18} />
 
               <span className="font-medium">
                 EduOS Student Portal
               </span>
+
             </div>
 
             <h1 className="mt-6 text-4xl font-extrabold lg:text-5xl">
@@ -111,15 +254,21 @@ export default function StudentSubjectsPage() {
             </h1>
 
             <p className="mt-4 max-w-2xl text-lg leading-8 text-blue-100">
-              Continue your learning journey, complete assignments, improve
-              your progress, and unlock new achievements.
+              Continue your learning journey, complete assignments,
+              improve your progress, and unlock new achievements.
             </p>
+
           </div>
 
-          {/* Right */}
+          {/* Hero statistics */}
           <div className="grid grid-cols-3 gap-4">
+
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Flame size={28} className="mx-auto" />
+
+              <Flame
+                size={28}
+                className="mx-auto"
+              />
 
               <p className="mt-3 text-3xl font-bold">
                 5
@@ -128,10 +277,15 @@ export default function StudentSubjectsPage() {
               <p className="text-sm text-blue-100">
                 Day Streak
               </p>
+
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Star size={28} className="mx-auto" />
+
+              <Star
+                size={28}
+                className="mx-auto"
+              />
 
               <p className="mt-3 text-3xl font-bold">
                 240
@@ -140,10 +294,15 @@ export default function StudentSubjectsPage() {
               <p className="text-sm text-blue-100">
                 XP
               </p>
+
             </div>
 
             <div className="rounded-2xl bg-white/20 p-5 text-center backdrop-blur">
-              <Trophy size={28} className="mx-auto" />
+
+              <Trophy
+                size={28}
+                className="mx-auto"
+              />
 
               <p className="mt-3 text-3xl font-bold">
                 3
@@ -152,13 +311,18 @@ export default function StudentSubjectsPage() {
               <p className="text-sm text-blue-100">
                 Level
               </p>
+
             </div>
+
           </div>
+
         </div>
+
       </div>
 
-      {/* Page Heading */}
+      {/* Page heading */}
       <div className="mb-8 mt-10">
+
         <h2 className="text-4xl font-bold text-gray-900">
           My Subjects
         </h2>
@@ -166,15 +330,23 @@ export default function StudentSubjectsPage() {
         <p className="mt-2 text-lg text-gray-600">
           Everything you&apos;re currently studying.
         </p>
+
       </div>
 
+      {/* Assigned subjects */}
       {subjects.length > 0 ? (
+
         <div className="space-y-8">
+
           {subjects.map((subject, index) => {
+
             const theme =
-              subjectThemes[index % subjectThemes.length];
+              subjectThemes[
+                index % subjectThemes.length
+              ];
 
             return (
+
               <div
                 key={subject.id}
                 className="
@@ -187,8 +359,10 @@ export default function StudentSubjectsPage() {
                   hover:shadow-2xl
                 "
               >
+
                 <div className="flex flex-col xl:flex-row">
-                  {/* Left Visual */}
+
+                  {/* Subject visual */}
                   <div
                     className={`
                       flex
@@ -203,7 +377,9 @@ export default function StudentSubjectsPage() {
                       xl:w-80
                     `}
                   >
+
                     <div className="text-center text-white">
+
                       <div className="text-8xl">
                         {theme.icon}
                       </div>
@@ -211,13 +387,18 @@ export default function StudentSubjectsPage() {
                       <h3 className="mt-6 text-3xl font-bold">
                         {subject.name}
                       </h3>
+
                     </div>
+
                   </div>
 
-                  {/* Right Content */}
+                  {/* Subject content */}
                   <div className="flex-1 p-10">
+
                     <div className="flex items-start justify-between">
+
                       <div>
+
                         <h3 className="text-3xl font-bold">
                           {subject.name}
                         </h3>
@@ -225,22 +406,28 @@ export default function StudentSubjectsPage() {
                         <p className="mt-3 text-lg text-gray-600">
                           {theme.description}
                         </p>
+
                       </div>
 
                       <BookOpen
                         size={36}
                         className="shrink-0 text-blue-600"
                       />
+
                     </div>
 
+                    {/* Teacher and status */}
                     <div className="mt-8 grid gap-5 md:grid-cols-2">
+
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
+
                         <UserRound
                           size={24}
                           className="text-blue-600"
                         />
 
                         <div>
+
                           <p className="text-sm text-gray-500">
                             Teacher
                           </p>
@@ -249,16 +436,20 @@ export default function StudentSubjectsPage() {
                             {subject.teacher ||
                               'Teacher not assigned'}
                           </p>
+
                         </div>
+
                       </div>
 
                       <div className="flex items-center gap-4 rounded-2xl bg-slate-100 p-5">
+
                         <Clock
                           size={24}
                           className="text-green-600"
                         />
 
                         <div>
+
                           <p className="text-sm text-gray-500">
                             Status
                           </p>
@@ -266,12 +457,18 @@ export default function StudentSubjectsPage() {
                           <p className="font-semibold">
                             Active Learning
                           </p>
+
                         </div>
+
                       </div>
+
                     </div>
 
+                    {/* Progress */}
                     <div className="mt-8">
+
                       <div className="mb-2 flex justify-between">
+
                         <span className="font-medium text-gray-700">
                           Learning Progress
                         </span>
@@ -279,18 +476,23 @@ export default function StudentSubjectsPage() {
                         <span className="font-bold text-blue-600">
                           {theme.progress}%
                         </span>
+
                       </div>
 
                       <div className="h-3 overflow-hidden rounded-full bg-gray-200">
+
                         <div
                           className="h-full rounded-full bg-gradient-to-r from-cyan-500 to-blue-600"
                           style={{
                             width: `${theme.progress}%`,
                           }}
                         />
+
                       </div>
+
                     </div>
 
+                    {/* Continue */}
                     <button
                       className="
                         mt-8
@@ -310,15 +512,25 @@ export default function StudentSubjectsPage() {
                       Continue Learning
 
                       <ArrowRight size={18} />
+
                     </button>
+
                   </div>
+
                 </div>
+
               </div>
+
             );
           })}
+
         </div>
+
       ) : (
+
+        /* No subjects */
         <div className="rounded-3xl bg-white p-12 text-center shadow-lg">
+
           <BookOpen
             size={56}
             className="mx-auto mb-6 text-gray-400"
@@ -331,8 +543,11 @@ export default function StudentSubjectsPage() {
           <p className="mt-3 text-gray-500">
             Your teacher hasn&apos;t assigned any subjects yet.
           </p>
+
         </div>
+
       )}
+
     </div>
   );
 }
