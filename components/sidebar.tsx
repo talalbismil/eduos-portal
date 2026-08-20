@@ -14,7 +14,8 @@ import {
 export default function Sidebar() {
   return (
     <aside className="flex min-h-screen w-64 flex-col bg-slate-900 text-white">
-      
+
+      {/* Logo */}
       <div className="border-b border-slate-700 p-6">
         <Link
           href="/student"
@@ -37,6 +38,7 @@ export default function Sidebar() {
         </Link>
       </div>
 
+      {/* Navigation */}
       <nav className="flex-1 space-y-2 p-4">
 
         <Link
@@ -89,8 +91,10 @@ export default function Sidebar() {
 
       </nav>
 
+      {/* Footer */}
       <div className="border-t border-slate-700 p-4">
         <div className="flex items-center gap-3 rounded-xl bg-slate-800 p-3">
+
           <Users
             size={20}
             className="text-slate-400"
@@ -99,6 +103,7 @@ export default function Sidebar() {
           <span className="text-sm text-slate-300">
             Student Portal
           </span>
+
         </div>
       </div>
 
