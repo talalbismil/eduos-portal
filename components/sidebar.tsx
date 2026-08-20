@@ -14,9 +14,7 @@ import {
 export default function Sidebar() {
   return (
     <aside className="flex min-h-screen w-64 flex-col bg-slate-900 text-white">
-
-      {/* Logo */}
-
+      
       <div className="border-b border-slate-700 p-6">
         <Link
           href="/student"
@@ -39,22 +37,11 @@ export default function Sidebar() {
         </Link>
       </div>
 
-      {/* Navigation */}
-
       <nav className="flex-1 space-y-2 p-4">
 
         <Link
           href="/student"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <LayoutDashboard size={20} />
           Dashboard
@@ -62,16 +49,7 @@ export default function Sidebar() {
 
         <Link
           href="/student/subjects"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <BookOpen size={20} />
           My Subjects
@@ -79,16 +57,7 @@ export default function Sidebar() {
 
         <Link
           href="/student/homework"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <ClipboardList size={20} />
           Homework
@@ -96,16 +65,7 @@ export default function Sidebar() {
 
         <Link
           href="/student/marks"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <BarChart3 size={20} />
           Marks
@@ -113,16 +73,7 @@ export default function Sidebar() {
 
         <Link
           href="/student/attendance"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <CalendarCheck size={20} />
           Attendance
@@ -130,16 +81,7 @@ export default function Sidebar() {
 
         <Link
           href="/student/resources"
-          className="
-            flex
-            items-center
-            gap-3
-            rounded-xl
-            px-4
-            py-3
-            transition
-            hover:bg-slate-800
-          "
+          className="flex items-center gap-3 rounded-xl px-4 py-3 transition hover:bg-slate-800"
         >
           <BookOpen size={20} />
           Resources
@@ -147,19 +89,8 @@ export default function Sidebar() {
 
       </nav>
 
-      {/* Footer */}
-
       <div className="border-t border-slate-700 p-4">
-
-        <div className="
-          flex
-          items-center
-          gap-3
-          rounded-xl
-          bg-slate-800
-          p-3
-        ">
-
+        <div className="flex items-center gap-3 rounded-xl bg-slate-800 p-3">
           <Users
             size={20}
             className="text-slate-400"
@@ -168,9 +99,7 @@ export default function Sidebar() {
           <span className="text-sm text-slate-300">
             Student Portal
           </span>
-
         </div>
-
       </div>
 
     </aside>
