@@ -4,20 +4,37 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [identifier, setIdentifier] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function login() {
-    if (!email || !password) {
-      alert('Enter email and password');
+    if (!identifier.trim() || !password.trim()) {
+      alert('Enter your registration number/email and password');
       return;
     }
 
     setLoading(true);
 
+    /*
+     * Students can use a registration number.
+     * Teachers/Admins can continue using their existing email.
+     *
+     * Example:
+     * EDU-2026-001
+     * becomes
+     * EDU-2026-001@eduos.local
+     *
+     * Existing email addresses are left unchanged.
+     */
+    let loginEmail = identifier.trim();
+
+    if (!loginEmail.includes('@')) {
+      loginEmail = `${loginEmail.toLowerCase()}@eduos.local`;
+    }
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
+      email: loginEmail,
       password: password.trim(),
     });
 
@@ -33,7 +50,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Get user role from users table
+    /*
+     * Get the user's role from the users table.
+     */
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('role')
@@ -45,8 +64,6 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
-    alert('Login successful');
 
     const role = profile.role.toLowerCase();
 
@@ -65,14 +82,19 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-[400px] bg-white p-8 rounded-xl shadow">
-        <h1 className="text-3xl font-bold mb-6">EduOS Login</h1>
+        <h1 className="text-3xl font-bold mb-2">EduOS Login</h1>
+
+        <p className="text-gray-500 mb-6">
+          Students can use their registration number.
+        </p>
 
         <input
-          type="email"
-          placeholder="Email"
+          type="text"
+          placeholder="Registration Number or Email"
           className="w-full border p-3 mb-4 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={identifier}
+          onChange={(e) => setIdentifier(e.target.value)}
+          autoComplete="username"
         />
 
         <input
@@ -81,12 +103,13 @@ export default function LoginPage() {
           className="w-full border p-3 mb-6 rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
         />
 
         <button
           onClick={login}
           disabled={loading}
-          className="w-full bg-blue-600 text-white p-3 rounded"
+          className="w-full bg-blue-600 text-white p-3 rounded hover:bg-blue-700 disabled:opacity-50"
         >
           {loading ? 'Please wait...' : 'Login'}
         </button>
