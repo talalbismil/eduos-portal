@@ -4,21 +4,36 @@ import { useState } from 'react';
 import { supabase } from '@/lib/supabase';
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('');
+  const [registrationNo, setRegistrationNo] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
 
   async function login() {
-    if (!email || !password) {
-      alert('Enter email and password');
+    if (!registrationNo.trim() || !password) {
+      alert('Enter registration number and password');
       return;
     }
 
     setLoading(true);
 
+    /*
+     * Students use their registration number.
+     *
+     * Example:
+     * EDU-OS-004
+     *
+     * Internally this becomes:
+     * edu-os-004@eduos.local
+     *
+     * This is the email identifier used by Supabase Auth.
+     */
+    const registration = registrationNo.trim().toUpperCase();
+
+    const authEmail = `${registration.toLowerCase()}@eduos.local`;
+
     const { data, error } = await supabase.auth.signInWithPassword({
-      email: email.trim(),
-      password: password.trim(),
+      email: authEmail,
+      password: password,
     });
 
     if (error) {
@@ -33,7 +48,9 @@ export default function LoginPage() {
       return;
     }
 
-    // Get user role from users table
+    /*
+     * Get the user's role.
+     */
     const { data: profile, error: profileError } = await supabase
       .from('users')
       .select('role')
@@ -45,8 +62,6 @@ export default function LoginPage() {
       setLoading(false);
       return;
     }
-
-    alert('Login successful');
 
     const role = profile.role.toLowerCase();
 
@@ -65,14 +80,18 @@ export default function LoginPage() {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-100">
       <div className="w-[400px] bg-white p-8 rounded-xl shadow">
-        <h1 className="text-3xl font-bold mb-6">EduOS Login</h1>
+
+        <h1 className="text-3xl font-bold mb-6">
+          EduOS Login
+        </h1>
 
         <input
-          type="email"
-          placeholder="Email"
+          type="text"
+          placeholder="Registration Number"
           className="w-full border p-3 mb-4 rounded"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          value={registrationNo}
+          onChange={(e) => setRegistrationNo(e.target.value)}
+          autoComplete="username"
         />
 
         <input
@@ -81,6 +100,7 @@ export default function LoginPage() {
           className="w-full border p-3 mb-6 rounded"
           value={password}
           onChange={(e) => setPassword(e.target.value)}
+          autoComplete="current-password"
         />
 
         <button
@@ -90,6 +110,7 @@ export default function LoginPage() {
         >
           {loading ? 'Please wait...' : 'Login'}
         </button>
+
       </div>
     </div>
   );
